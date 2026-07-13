@@ -1,8 +1,9 @@
-
 use clap::{Parser, Subcommand};
+use std::fs;
+use std::path::Path;
 
 #[derive(Parser)]
-#[command(version, about)]
+#[command(name = "hgit", version, about)]
 struct Cli
 {
     #[command(subcommand)]
@@ -13,6 +14,9 @@ struct Cli
 enum Commands 
 {
     Init,
+    HashObject{
+        file: String,
+    },
 }
 
 fn main() {
@@ -23,7 +27,18 @@ fn main() {
     {
         Commands::Init => 
         {
-            println!("test")
+            if Path::new(".hgit").exists()
+            {
+                println!("Repository Already Exists!");
+                return;
+            }
+
+            fs::create_dir_all(".hgit/objects").expect("did not create main hgit folder");
+            fs::create_dir_all(".hgit/refs/heads").expect("did not create sub hgit folders");
+        }
+
+        Commands::HashObject { file } => {
+            println!("Target File: {}", file);
         }
     }
 }
