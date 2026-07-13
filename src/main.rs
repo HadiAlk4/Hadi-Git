@@ -18,7 +18,6 @@ enum Commands
         file: String,
     },
 }
-
 fn main() {
 
     let cli = Cli::parse();
