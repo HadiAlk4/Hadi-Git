@@ -4,3 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# For handling the SHA-1 hashes
+sha1 = "0.10"
+hex = "0.4"
+
+# For compressing and decompressing the Git objects
+flate2 = "1.0"
+clap = { version = "4.0", features = ["derive"] }

@@ -26,3 +26,4 @@ TestResults.xml
 
 /target
 .mygit/
+.hgit/
