@@ -2,6 +2,11 @@ use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::Path;
 
+
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
+
+
 #[derive(Parser)]
 #[command(name = "hgit", version, about)]
 struct Cli
@@ -44,11 +49,22 @@ fn main() {
 
             // hashing - well calculate the SHA-1 hash so that if even a single comma changes well be able to see that theyre different 
             //after feeding it data_store SHA-1 will return a 20 byte sequence of binary data and then well encode them in a 40-character hex string 
+            // the first two letters of the hash will become the name of the subfolder and the rest become the name of the actual sub folder 
             use sha1::{Sha1, Digest};
             let mut hasher = Sha1::new();
             hasher.update(&store_data);
             let result = hasher.finalize();
             let hash_string = hex::encode(result);
+
+            let sub_folder_path = format!(".hgit/objects/{}", &hash_string[0..2]);
+            let file_path = format!("{}/{}", sub_folder_path, &hash_string[2..]);
+
+            let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+            encoder.write_all(&store_data).expect("Compression Failed");
+            let compressed_data = encoder.finish().expect("Finalizing Compression Failed");
+
+            fs::create_dir_all(&sub_folder_path).expect("Failed to Create Object Subfolders");
+            fs::write(&file_path, compressed_data).expect("Failed to Write Object Data File");
 
             println!("SHA-1 Hash:\n{}", hash_string);
             //println!("File Content:\n{}", content);
