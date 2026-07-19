@@ -87,7 +87,15 @@ fn main() {
             let mut uncompressed_data = Vec::new();
             decoder.read_to_end(&mut uncompressed_data).expect("Failed to decompress object data");
 
+            if let Some(null_pos) = uncompressed_data.iter().position(|&b| b == 0){
+                let content_bytes = &uncompressed_data[null_pos + 1..];
 
+                let content_string = String::from_utf8_lossy(content_bytes);
+
+                if pretty {
+                    print!("{}", content_string);
+                }
+            }
         
         }
     }
