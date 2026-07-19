@@ -26,7 +26,8 @@ enum Commands
         #[arg(short = 'p')]
         pretty: bool, // map -p
         object: String, // store SHA-1 String
-    }
+    },
+    WriteTree,
 }
 fn main() {
 
@@ -97,6 +98,31 @@ fn main() {
                 }
             }
         
+        }
+
+        Commands::WriteTree => {
+            let mut entries = Vec::new();
+
+            let paths = fs::read_dir(".").expect("failed to read current directory");
+
+            for path_result in paths {
+                let entry = path_result.expect("failed to read directory entry");
+                let file_name = entry.file_name().into_string().expect("invalid file name");
+
+                if file_name == "target" || file_name.starts_with(".") || file_name == "main" {
+                    continue;
+                }
+
+                let file_type = entry.file_type().expect("failed to get file type");
+
+                if file_type.is_file() {
+                    entries.push(file_name);
+                }
+            }
+
+            println!("valid files found to map into tree: {:?}", entries);
+
+
         }
     }
 }
