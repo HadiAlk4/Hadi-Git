@@ -22,6 +22,11 @@ enum Commands
     HashObject{
         file: String,
     },
+    CatFile{
+        #[arg(short = 'p')]
+        pretty: bool, // map -p
+        object: String, // store SHA-1 String
+    }
 }
 fn main() {
 
@@ -68,6 +73,22 @@ fn main() {
 
             println!("SHA-1 Hash:\n{}", hash_string);
             //println!("File Content:\n{}", content);
+        }
+
+        Commands::CatFile { pretty, object } => { // locate the file, read compressed bytes, decompress the data, strip the header 
+            let sub_folder_path = format!(".hgit/objects/{}", &object[0..2]);
+            let file_path = format!("{}/{}", sub_folder_path, &object[2..]);
+
+            use flate2::read::ZlibDecoder;
+            use std::io::Read;
+
+            let compressed_data = fs::read(&file_path).unwrap_or_else(|_| panic!("Could not find object: {}", object));
+            let mut decoder = ZlibDecoder::new(&compressed_data[..]);
+            let mut uncompressed_data = Vec::new();
+            decoder.read_to_end(&mut uncompressed_data).expect("Failed to decompress object data");
+
+
+        
         }
     }
 }
