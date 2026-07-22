@@ -120,7 +120,70 @@ fn main() {
                 }
             }
 
-            println!("valid files found to map into tree: {:?}", entries);
+            entries.sort();
+
+            let mut tree_body = Vec::new();
+            use sha1::{Sha1, Digest};
+
+            for file_name in entries 
+            {
+                // read file content
+                let content = fs::read_to_string(&file_name).unwrap_or_else(|_| panic!("Could not read file: {}", file_name));
+
+
+                // prepare blob
+                let mut store_data = Vec::new();
+                use std::io::Write;
+                write!(&mut store_data, "blob {}\0{}", content.len(), content).expect("failed to format blob");
+
+                let mut hasher = Sha1::new();
+                hasher.update(&store_data);
+                let result = hasher.finalize(); // this is a generic 20 byte hash
+                let hash_string = hex::encode(result);
+
+                // save blob to disk
+                let sub_folder_path = format!(".hgit/objects/{}", &hash_string[0..2]);
+                let file_path = format!("{}/{}", sub_folder_path, &hash_string[2..]);
+
+                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+                encoder.write_all(&store_data).expect("Compression Failure");
+                let compressed_data = encoder.finish().expect("Finalizing Compression");
+
+                fs::create_dir_all(&sub_folder_path).expect("Failed to create object subfolder");
+                fs::write(&file_path, compressed_data).expect("Failed to write object data file");
+
+                // append entry to tree
+                write!(&mut tree_body, "100644 {}\0", file_name).expect("Failed to write tree entry header");
+                tree_body.extend_from_slice(&result);
+            }
+
+            // wrap tree in a tree size header
+
+            let mut final_tree_object = Vec::new();
+            use std::io::Write;
+            write!(&mut final_tree_object, "tree {}\0", tree_body.len()).expect("failed to format tree header");
+            final_tree_object.extend_from_slice(&tree_body);
+
+            // hash and store the tree object itself
+            let mut tree_hasher = Sha1::new();
+            tree_hasher.update(&final_tree_object);
+            let tree_hash_result = tree_hasher.finalize();
+            let tree_hash_string = hex::encode(tree_hash_result);
+
+            let tree_sub_folder = format!(".hgit/objects/{}", &tree_hash_string[0..2]);
+            let tree_file_path = format!("{}/{}", tree_sub_folder, &tree_hash_string[2..]);
+
+            let mut tree_encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+            tree_encoder.write_all(&final_tree_object).expect("Compression Failed");
+            let compressed_tree = tree_encoder.finish().expect("Finalizing Compression");
+            
+
+            fs::create_dir_all(&tree_sub_folder).expect("failed to create tree sunfolder");
+            fs::write(&tree_file_path, compressed_tree).expect("Failed to write tree object file");
+
+            println!("{}", tree_hash_string);
+
+
 
 
         }
