@@ -28,6 +28,11 @@ enum Commands
         object: String, // store SHA-1 String
     },
     WriteTree,
+    CommitTree {
+        tree_sha: String,
+        #[arg(short = 'm')]
+        message: String,
+    },
 }
 fn main() {
 
@@ -182,10 +187,10 @@ fn main() {
             fs::write(&tree_file_path, compressed_tree).expect("Failed to write tree object file");
 
             println!("{}", tree_hash_string);
+        }
 
-
-
-
+        Commands::CommitTree { tree_sha, message } => {
+            println!("CommitTree triggered for tree: {} with message {}", tree_sha, message);
         }
     }
 }
